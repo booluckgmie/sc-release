@@ -1,0 +1,2 @@
+# Runtime dependencies for the Vercel API only (collector deps live in requirements-collector.txt)
+fastapi>=0.110
