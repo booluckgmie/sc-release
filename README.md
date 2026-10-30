@@ -38,6 +38,11 @@ That push triggers a Vercel redeploy, so the live data is always a git commit yo
 If the push step fails, enable read and write access under Settings -> Actions -> General -> Workflow permissions.
 `ci.yml` runs the tests on pushes and pull requests.
 
+**Run history**
+- Run #1 (manual, 30 Oct 2026) failed at the test step: `collect.yml` installed only `requirements-collector.txt`,
+  so `tests/test_api.py` could not import `fastapi`. Fixed by installing `requirements.txt` and `httpx` too,
+  matching `ci.yml`. Nothing was crawled or committed by that run; the catalogue is still the 30 Oct 2026 build.
+
 ## Quick start
 
 ```bash
