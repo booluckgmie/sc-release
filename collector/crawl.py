@@ -28,7 +28,7 @@ DEFAULT_PREFIXES = [
     "/regulation/corporate-governance",
     "/regulation/acts",
 ]
-USER_AGENT = "sc-regdocs-collector/0.1 (+https://github.com/YOUR-USER/sc-regdocs)"
+USER_AGENT = "sc-regdocs-collector/0.1 (+https://github.com/booluckgmie/sc-release)"
 
 
 def now() -> str:
