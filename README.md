@@ -1,16 +1,42 @@
 # sc-regdocs
 
-Unofficial, read-only JSON index of regulatory documents published on the
+Unofficial, read-only index of regulatory documents published on the
 [Securities Commission Malaysia](https://www.sc.com.my) website. SC publishes pages and PDF downloads,
-not a catalogue API, so this repo builds one:
+not a catalogue API, so this repo builds one and puts a browsable page in front of it.
+
+**Live site:** https://sc-release-nqzz.vercel.app/ (API docs at `/docs`)
+
+Not affiliated with SC. Every record links back to the official page; confirm there before relying on it.
+
+## How it works
 
 ```
 sitemap -> section pages -> parse download links + dates -> data/catalogue.json -> FastAPI on Vercel
-                                   |
+                                   |                                                  |-> HTML list at /
                                    +-> optional: download PDFs -> SHA-256, file type, text, date cross-check
 ```
 
-Not affiliated with SC. Every record links back to the official page; confirm there before relying on it.
+- **Collector** (`collector/`): crawls ~146 SC section pages at 1 request/second, parses document links and
+  dates, and writes `data/catalogue.json` (829 documents, 1993 to 2026, at the last run).
+- **API + UI** (`api/index.py`, entrypoint `app.py`): FastAPI app reading the committed catalogue.
+  `/` is a server-rendered, filterable list; `/v1/*` is the JSON API.
+- **Hosting**: Vercel project `sc-release-nqzz`, deployed from `main`. There is no `vercel.json`; Vercel detects
+  the root `app.py` and keeps real request paths. (An earlier rewrite to `/api/index` made every route 404.)
+
+## Web page (`/`)
+
+Search (title or topic), year, category, document type, From/To date, newest/oldest first, and
+"verified downloads only". 25 results per page with Newer/Older links. Each row links to the PDF and to the
+SC source page. Search matches titles and topics only; PDF body text is not indexed.
+
+## Update schedule
+
+`.github/workflows/collect.yml` runs **daily at 02:00 UTC (10:00 Malaysia time)** and on demand
+(GitHub: Actions -> collect -> Run workflow). Each run: tests, `discover` (re-crawl), `fetch --recheck-days 30`
+(download new PDFs, re-check old ones monthly), `stats`, then commits `data/catalogue.json` only if it changed.
+That push triggers a Vercel redeploy, so the live data is always a git commit you can diff.
+If the push step fails, enable read and write access under Settings -> Actions -> General -> Workflow permissions.
+`ci.yml` runs the tests on pushes and pull requests.
 
 ## Quick start
 
@@ -21,19 +47,18 @@ pip install -r requirements-collector.txt -r requirements.txt httpx
 python -m pytest -q tests                      # parser + API tests (offline, fixtures from live pages)
 python -m collector discover                   # crawl ~146 pages, ~3 min at 1 req/s -> data/catalogue.json
 python -m collector verify --year 2009 --year 2019 --write   # acceptance test on real downloads
-python -m collector fetch                      # download everything pending (slow; CI does this weekly)
+python -m collector fetch                      # download everything pending (slow; the workflow does this daily)
 python -m collector stats
 uvicorn api.index:app --reload                 # local API at http://127.0.0.1:8000/docs
 ```
 
 ## Deploy (GitHub -> Vercel)
 
-1. Create a GitHub repo, replace `YOUR-USER` in `collector/crawl.py` (the User-Agent), and push.
-2. In Vercel: **Add New Project -> import the repo**. No build command needed; `vercel.json` routes
-   everything to `api/index.py`, and only `requirements.txt` (FastAPI) is installed for the function.
-3. `.github/workflows/collect.yml` runs weekly (and on demand): tests, `discover`, `fetch --recheck-days 30`,
-   then commits `data/catalogue.json`. The push triggers a Vercel redeploy, so the API data is always a git
-   commit you can diff.
+1. Push the repo to GitHub (the collector User-Agent already points at this repo).
+2. In Vercel: **Add New Project -> import the repo**. No build command and no `vercel.json` are needed;
+   `requirements.txt` (FastAPI) is installed for the function and `.vercelignore` keeps the collector, tests and
+   the zip out of the bundle.
+3. Every push to `main` redeploys, including the daily catalogue commit.
 
 ## API
 
@@ -90,7 +115,7 @@ recorded in `previous_sha256` / `content_changed_at`, and IDs that disappear fro
   of a larger guideline, which SC lists without a date. They are real documents but `year` is `null`.
 - **Parent links are conservative.** A summary or FAQ is attached to a main document only when the nearest
   preceding main document has the same date. SC's markup is not reliably nested.
-- Only 7 of 829 documents have been downloaded and hashed so far; run `fetch` (or the weekly workflow) for the rest.
+- Only 7 of 829 documents have been downloaded and hashed so far; run `fetch` (or the daily workflow) for the rest.
 - `/regulation/enforcement` is excluded by default. Pass `--prefix /regulation/enforcement` to include it.
 - Collector etiquette: 1 request/second, honours `robots.txt` (currently allows everything), identifies itself.
   Check SC's terms of use before republishing document content; this repo stores metadata and hashes, and

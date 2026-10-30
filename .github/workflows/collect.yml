@@ -1,7 +1,7 @@
 name: collect
 on:
   schedule:
-    - cron: "0 2 * * 1"      # Mondays 02:00 UTC
+    - cron: "0 2 * * *"      # daily 02:00 UTC (10:00 MYT)
   workflow_dispatch:
 permissions:
   contents: write
