@@ -4,7 +4,7 @@ Unofficial, read-only index of regulatory documents published on the
 [Securities Commission Malaysia](https://www.sc.com.my) website. SC publishes pages and PDF downloads,
 not a catalogue API, so this repo builds one and puts a browsable page in front of it.
 
-**Live site:** https://sc-release-nqzz.vercel.app/ (API docs at `/docs`)
+**Live site:** https://sc-release.vercel.app/ (API docs at `/docs`)
 
 Not affiliated with SC. Every record links back to the official page; confirm there before relying on it.
 
@@ -20,7 +20,7 @@ sitemap -> section pages -> parse download links + dates -> data/catalogue.json 
   dates, and writes `data/catalogue.json` (829 documents, 1993 to 2026, at the last run).
 - **API + UI** (`api/index.py`, entrypoint `app.py`): FastAPI app reading the committed catalogue.
   `/` is a server-rendered, filterable list; `/v1/*` is the JSON API.
-- **Hosting**: Vercel project `sc-release-nqzz`, deployed from `main`. There is no `vercel.json`; Vercel detects
+- **Hosting**: Vercel project `sc-release`, deployed from `main`. There is no `vercel.json`; Vercel detects
   the root `app.py` and keeps real request paths. (An earlier rewrite to `/api/index` made every route 404.)
 
 ## Web page (`/`)
